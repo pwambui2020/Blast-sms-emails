@@ -4,7 +4,8 @@ import helmet from "helmet";
 import compression from "compression";
 import { notFound } from "./middlewares/notFound";
 import { errorHandler } from "./middlewares/errorHandler";
-
+import {requestLogger} from "./middlewares/requestLogger";
+import { apiLimiter } from "./middlewares/rateLimiter";
 import healthRoutes from "./routes/health.routes"
 
 const app = express();
@@ -22,5 +23,9 @@ app.use("/api/v1/health", healthRoutes);
 app.use(notFound);
 
 app.use(errorHandler);
+
+app.use(requestLogger);
+
+app.use(apiLimiter);
 
 export default app;
