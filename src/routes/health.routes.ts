@@ -4,14 +4,14 @@ import { healthController } from "../controllers/health.controller";
 
 const router = Router();
 
-router.get("/", (_, res) => {
-  res.status(200).json({
-    success: true,
-    status: "OK",
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-  });
-});
+// router.get("/", (_, res) => {
+//   res.status(200).json({
+//     success: true,
+//     status: "OK",
+//     timestamp: new Date().toISOString(),
+//     uptime: process.uptime(),
+//   });
+// });
 
 // router.post(
 //   "/register",
