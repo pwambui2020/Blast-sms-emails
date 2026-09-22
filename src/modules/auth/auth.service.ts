@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import { prisma } from "../../config/prisma";
+import { generateAccessToken, AccessTokenPayload } from "../../utils/jwt";
 
 interface RegisterInput {
   firstName: string;
@@ -38,7 +39,6 @@ export async function registerUser(data: RegisterInput) {
     throw new Error("CUSTOMER role not found");
   }
 
-  // 4. Create the user, role assignment, and credits
   const user = await prisma.$transaction(async (tx) => {
     const newUser = await tx.user.create({
       data: {
@@ -94,5 +94,14 @@ export async function loginUser(data: LoginInput) {
   }  
 
   const{ password: _, ...safeUser } = user;
-  return safeUser;
-}
+
+  const accessToken = generateAccessToken({
+    userId: user.id,
+    email: user.email,
+  });
+
+  return {
+    user: safeUser,
+    accessToken
+  }
+};
