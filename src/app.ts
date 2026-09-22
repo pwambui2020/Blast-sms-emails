@@ -9,6 +9,7 @@ import {requestLogger} from "./middlewares/requestLogger";
 import { apiLimiter } from "./middlewares/rateLimiter";
 
 import healthRoutes from "./routes/health.routes"
+import authRoutes from "./modules/auth/auth.routes";
 import { swaggerUi, swaggerDocument } from "./config/swagger";
 
 const app = express();
@@ -32,6 +33,8 @@ app.use(
 );
 
 app.use("/api/v1/health", healthRoutes);
+
+app.use("/api/v1/auth", authRoutes);
 
 app.use(notFound);
 
