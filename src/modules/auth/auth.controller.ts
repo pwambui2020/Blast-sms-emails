@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { registerSchema,loginSchema } from './auth.validator';
 import { loginUser, registerUser } from "./auth.service";
 import { successResponse } from '../../utils/apiResponse';
+import { AuthenticatedRequest } from '../../middlewares/auth.middleware';
 
 export async function registerController(
     req: Request,
@@ -31,5 +32,16 @@ export async function loginController (
         "Login successfully",
         user,
         
+    );
+}
+
+export function meController(
+    req: AuthenticatedRequest,
+    res: Response
+){
+    return successResponse(
+        res,
+        "Authenicated user",
+        req.user
     );
 }

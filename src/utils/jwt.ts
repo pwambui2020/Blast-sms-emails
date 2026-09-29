@@ -11,3 +11,13 @@ export function generateAccessToken(payload: AccessTokenPayload) {
         expiresIn: "15m"
     });
 }
+
+export function generateRefreshToken(userId: string){
+    return jwt.sign(
+        {userId},
+        env.JWT_REFRESH_SECRET,
+        {
+            expiresIn: "7d"
+        }
+    );
+}
