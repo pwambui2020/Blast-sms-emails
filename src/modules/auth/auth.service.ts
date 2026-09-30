@@ -1,6 +1,8 @@
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import {env} from "../../config/env";
 import { prisma } from "../../config/prisma";
-import { generateAccessToken, AccessTokenPayload } from "../../utils/jwt";
+import { generateAccessToken, AccessTokenPayload,generateRefreshToken } from "../../utils/jwt";
 
 interface RegisterInput {
   firstName: string;
@@ -100,8 +102,65 @@ export async function loginUser(data: LoginInput) {
     email: user.email,
   });
 
+  const refreshToken = generateRefreshToken(user.id);
+
+  await prisma.refreshToken.create({
+    data: {
+      token: refreshToken,
+      userId: user.id,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 
+    },
+  });
+
   return {
     user: safeUser,
-    accessToken
+    accessToken,
+    refreshToken,
   }
 };
+
+export async function refreshAccessToken(token: string){
+  const storedToken = await prisma.refreshToken.findUnique({
+    where: {
+      token,
+    },
+    include: {
+      user: true,
+    },
+  });
+
+  if (!storedToken){
+    throw new Error("Invalid refresh token");
+  }
+
+  // 2. Check whether the token was revoked
+  if (storedToken.revoked) {
+    throw new Error("Refresh token has been revoked");
+  }
+
+  // 3. Check whether the database expiration has passed
+  if (storedToken.expiresAt < new Date()) {
+    throw new Error("Refresh token has expired");
+  }
+
+  // 4. Verify the JWT itself
+  try {
+    jwt.verify(token, env.JWT_REFRESH_SECRET);
+  } catch {
+    throw new Error("Invalid refresh token");
+  }
+
+  // 5. Create a new access token
+  const accessToken = generateAccessToken({
+    userId: storedToken.user.id,
+    email: storedToken.user.email,
+  });
+
+  return {
+    accessToken,
+  }
+
+
+
+
+}

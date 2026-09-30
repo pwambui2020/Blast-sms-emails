@@ -1,5 +1,5 @@
 import {Router} from "express";
-import { registerController, loginController, meController } from "./auth.controller";
+import { registerController, loginController, meController,refreshTokenController } from "./auth.controller";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { authenticate } from "../../middlewares/auth.middleware";
 
@@ -20,5 +20,10 @@ router.get (
     authenticate,
     meController
 )
+
+router.post(
+    "/refresh",
+    asyncHandler(refreshTokenController)
+);
 
 export default router;
