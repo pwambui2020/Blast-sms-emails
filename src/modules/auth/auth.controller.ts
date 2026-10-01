@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { registerSchema,loginSchema } from './auth.validator';
-import { loginUser, registerUser,refreshAccessToken } from "./auth.service";
+import { loginUser, registerUser,refreshAccessToken,logoutUser } from "./auth.service";
 import { successResponse } from '../../utils/apiResponse';
 import { AuthenticatedRequest } from '../../middlewares/auth.middleware';
 
@@ -66,5 +66,28 @@ export async function refreshTokenController (
         res,
         "Access token refreshed successfully",
         data
+    );
+}
+
+export async function logoutController(
+    req: Request,
+    res: Response
+    
+) {
+
+    const {refreshToken} = req.body;
+
+    if(!refreshToken) {
+        return res.status(400).json({
+            succes: false,
+            message: "Refresh token is required",
+        });
+    }
+
+    await logoutUser(refreshToken);
+    
+    return successResponse(
+        res,
+        "Logout successful"
     );
 }

@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import {env} from "../../config/env";
 import { prisma } from "../../config/prisma";
 import { generateAccessToken, AccessTokenPayload,generateRefreshToken } from "../../utils/jwt";
+import {AppError} from "../../utils/AppError";
 
 interface RegisterInput {
   firstName: string;
@@ -26,7 +27,7 @@ export async function registerUser(data: RegisterInput) {
   });
 
   if (existingUser) {
-    throw new Error("Email is already registered");
+    throw new AppError(409,"Email is already registered");
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
@@ -38,7 +39,7 @@ export async function registerUser(data: RegisterInput) {
   });
 
   if (!customerRole) {
-    throw new Error("CUSTOMER role not found");
+    throw new AppError(500,"CUSTOMER role not found");
   }
 
   const user = await prisma.$transaction(async (tx) => {
@@ -83,7 +84,7 @@ export async function loginUser(data: LoginInput) {
   });
 
   if (!user) {
-    throw new Error("Invalid email or password")
+    throw new AppError(401,"Invalid email or password")
   }
 
   const passwordValid = await bcrypt.compare(
@@ -130,27 +131,23 @@ export async function refreshAccessToken(token: string){
   });
 
   if (!storedToken){
-    throw new Error("Invalid refresh token");
+    throw new AppError(401,"Invalid refresh token");
   }
 
-  // 2. Check whether the token was revoked
   if (storedToken.revoked) {
-    throw new Error("Refresh token has been revoked");
+    throw new AppError(401,"Refresh token has been revoked");
   }
 
-  // 3. Check whether the database expiration has passed
   if (storedToken.expiresAt < new Date()) {
-    throw new Error("Refresh token has expired");
+    throw new AppError(401,"Refresh token has expired");
   }
 
-  // 4. Verify the JWT itself
   try {
     jwt.verify(token, env.JWT_REFRESH_SECRET);
   } catch {
-    throw new Error("Invalid refresh token");
+    throw new AppError(401,"Invalid refresh token");
   }
 
-  // 5. Create a new access token
   const accessToken = generateAccessToken({
     userId: storedToken.user.id,
     email: storedToken.user.email,
@@ -159,8 +156,27 @@ export async function refreshAccessToken(token: string){
   return {
     accessToken,
   }
+}
 
+export async function logoutUser(refreshToken: string) {
 
+  const storedToken = await prisma.refreshToken.findUnique({
+    where: {
+      token: refreshToken,
+    },
+  });
 
+  if (!storedToken) {
+    throw new AppError(401,"Invalid refresh token");
+  }
 
+  await prisma.refreshToken.update({
+    where: {
+      id: storedToken.id,
+    },
+    data: {
+      revoked: true,
+    },
+  });
+  return true;
 }
