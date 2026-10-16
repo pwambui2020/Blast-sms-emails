@@ -93,7 +93,7 @@ export async function loginUser(data: LoginInput) {
   );
 
   if (!passwordValid) {
-    throw new Error ("Invalid email or password")
+    throw new AppError (401,"Invalid email or password")
   }  
 
   const{ password: _, ...safeUser } = user;
